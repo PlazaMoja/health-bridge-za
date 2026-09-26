@@ -1,0 +1,12 @@
+ID,Area,Test case,Actual result,Status,Blocker
+API-01,GraphQL,Insert appointment with valid patient,Not run,Blocked,"schema.gql and generated API absent"
+API-02,GraphQL,Insert appointment with invalid patient ID,Not run,Blocked,"schema.gql and generated API absent"
+API-03,GraphQL,Insert user without email,Not run,Blocked,"schema.gql and generated API absent"
+API-04,GraphQL,Reject duplicate ClinicMedicine composite key,Not run,Blocked,"schema.gql and generated API absent"
+API-05,GraphQL,Queue numbers unique and sequential under concurrent inserts,Not run,Blocked,"backend concurrency behavior unavailable"
+FLOW-01,Integration,Register user through medical-record creation,Not run,Blocked,"Data Connect endpoint and schema absent"
+UAT-01,UAT,Register and book at preferred clinic,Not verified,Blocked,"No live backend configured"
+UAT-02,UAT,View medical history,Not verified,Blocked,"No live backend configured"
+UAT-03,UAT,Clinic worker updates daily queue,Not verified,Blocked,"No live backend configured"
+UAT-04,UAT,Prevent double booking,Not verified,Blocked,"No backend uniqueness/transaction implementation"
+UAT-05,UAT,Patient cancels appointment,Confirmation UI added; persistence not verified,Partial,"Requires running Firebase project"
