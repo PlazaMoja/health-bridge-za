@@ -1,5 +1,8 @@
 import 'home_page.dart';
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'register_page.dart';
+import 'session.dart';
 
 void main() {
   runApp(const HealthBridgeApp());
@@ -37,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
 
   bool hidePassword = true;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -45,27 +49,45 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
- 
-  void login() {
-  if (phoneController.text.isEmpty ||
-      passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Please enter your phone number and password.',
+  // Checks the phone number and password against the database (via the backend)
+  Future<void> login() async {
+    if (phoneController.text.trim().isEmpty ||
+        passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter your phone number and password.',
+          ),
         ),
-      ),
-    );
-    return;
-  }
+      );
+      return;
+    }
 
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const HomePage(),
-    ),
-  );
-}
+    setState(() => isLoading = true);
+
+    try {
+      final user = await ApiService.login(
+        phoneController.text.trim(),
+        passwordController.text,
+      );
+      Session.currentUser = user;
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomePage(),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,9 +156,10 @@ class _LoginPageState extends State<LoginPage> {
 
                     GestureDetector(
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Registration coming soon.'),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterPage(),
                           ),
                         );
                       },
@@ -266,21 +289,31 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: login,
+                    onPressed: isLoading ? null : login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2F80ED),
                       foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFF2F80ED),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
 

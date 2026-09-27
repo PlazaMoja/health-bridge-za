@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'appointment_page.dart';
 import 'appointments_page.dart';
-import 'clinics_page.dart';
+import 'Clinics_page.dart';
+import 'session.dart';
 import 'consult_page.dart';
 import 'medication_page.dart';
 import 'record_page.dart';
@@ -51,9 +52,9 @@ class _HomePageState extends State<HomePage> {
           children: [
 
             // Welcome
-            const Text(
-              'Hello, Kamogelo!',
-              style: TextStyle(
+            Text(
+              'Hello, ${Session.currentUser?.name ?? 'there'}!',
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
