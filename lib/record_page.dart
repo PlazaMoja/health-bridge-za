@@ -1,133 +1,55 @@
 import 'package:flutter/material.dart';
+import 'services/app_error.dart';
+import 'services/sql_service.dart';
 
-class RecordsPage extends StatelessWidget {
+class RecordsPage extends StatefulWidget {
   const RecordsPage({super.key});
+
+  @override
+  State<RecordsPage> createState() => _RecordsPageState();
+}
+
+class _RecordsPageState extends State<RecordsPage> {
+  final SqlService _sql = SqlService();
+  late Future<List<dynamic>> _records;
+
+  @override
+  void initState() {
+    super.initState();
+    _records = _sql.medicalRecords();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-
-      // App Bar
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Health Records',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black,
-        ),
-      ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-
-          // Medical Records
-          const Text(
-            'Medical Records',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 15),
-
-          _recordCard(
-            icon: Icons.description_outlined,
-            title: 'Medical History',
-            subtitle: 'View your previous medical information',
-          ),
-
-          _recordCard(
-            icon: Icons.medication_outlined,
-            title: 'Prescriptions',
-            subtitle: 'View your prescribed medication',
-          ),
-
-          _recordCard(
-            icon: Icons.science_outlined,
-            title: 'Test Results',
-            subtitle: 'View your laboratory and test results',
-          ),
-
-          _recordCard(
-            icon: Icons.receipt_long_outlined,
-            title: 'Visit History',
-            subtitle: 'View your previous healthcare visits',
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Record Card
-  Widget _recordCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF4FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF2F80ED),
-            ),
-          ),
-
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+      appBar: AppBar(title: const Text('Health Records')),
+      body: FutureBuilder<List<dynamic>>(
+        future: _records,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Unable to load health records.\n${AppError.message(snapshot.error!)}', textAlign: TextAlign.center));
+          }
+          final records = snapshot.data!;
+          if (records.isEmpty) return const Center(child: Text('No medical records found'));
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: records.length,
+            itemBuilder: (context, index) {
+              final record = records[index];
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: Text(record.diagnosis ?? 'Medical record'),
+                  subtitle: Text('${record.clinic.name}\n${record.notes ?? ''}\nVisit: ${record.visitDate.day}/${record.visitDate.month}/${record.visitDate.year}'),
+                  isThreeLine: true,
                 ),
-
-                const SizedBox(height: 5),
-
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: Colors.grey,
-          ),
-        ],
+              );
+            },
+          );
+        },
       ),
     );
   }

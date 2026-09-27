@@ -1,113 +1,60 @@
 import 'package:flutter/material.dart';
+import 'services/app_error.dart';
+import 'services/sql_service.dart';
 
-class ConsultPage extends StatelessWidget {
+class ConsultPage extends StatefulWidget {
   const ConsultPage({super.key});
+
+  @override
+  State<ConsultPage> createState() => _ConsultPageState();
+}
+
+class _ConsultPageState extends State<ConsultPage> {
+  final SqlService _sql = SqlService();
+  late Future<List<dynamic>> _workers;
+
+  @override
+  void initState() {
+    super.initState();
+    _workers = _sql.allHealthcareWorkers();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-
-      // App Bar
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Talk to a Doctor',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black,
-        ),
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // Available Doctors
-            const Text(
-              'Available Doctors',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // Doctor
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-
-                  const CircleAvatar(
-                    radius: 30,
-                    child: Icon(Icons.person),
-                  ),
-
-                  const SizedBox(width: 15),
-
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dr. Sarah Mokoena',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          'General Practitioner',
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          'Available now',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+      appBar: AppBar(title: const Text('Talk to a Doctor')),
+      body: FutureBuilder<List<dynamic>>(
+        future: _workers,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Unable to load doctors.\n${AppError.message(snapshot.error!)}', textAlign: TextAlign.center));
+          }
+          final workers = snapshot.data!;
+          if (workers.isEmpty) return const Center(child: Text('No doctors available'));
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: workers.length,
+            itemBuilder: (context, index) {
+              final worker = workers[index];
+              return Card(
+                child: ListTile(
+                  leading: const CircleAvatar(child: Icon(Icons.person)),
+                  title: Text('${worker.user.firstName} ${worker.user.lastName}'),
+                  subtitle: Text(worker.specialization ?? worker.profession ?? 'General Practitioner'),
+                  trailing: FilledButton(
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Consultation request started.')),
                     ),
-                  ),
-
-                  // Start Consultation
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Starting consultation...',
-                          ),
-                        ),
-                      );
-                    },
                     child: const Text('Talk'),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

@@ -1,150 +1,117 @@
 import 'package:flutter/material.dart';
+import 'services/app_error.dart';
+import 'services/sql_service.dart';
 
-class AppointmentsPage extends StatelessWidget {
+class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
+
+  @override
+  State<AppointmentsPage> createState() => _AppointmentsPageState();
+}
+
+class _AppointmentsPageState extends State<AppointmentsPage> {
+  final SqlService _sql = SqlService();
+  late Future<List<dynamic>> _appointments;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() => _appointments = _sql.appointments();
+
+  Future<void> _cancel(dynamic appointment) async {
+    try {
+      await _sql.cancelAppointment(appointment.id, 'Cancelled by patient');
+      if (mounted) {
+        setState(() {
+          _appointments = _sql.appointments();
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not cancel appointment: ${AppError.message(error)}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _editNotes(dynamic appointment) async {
+    final controller = TextEditingController(text: appointment.reason ?? '');
+    final notes = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit appointment notes'),
+        content: TextField(controller: controller, maxLines: 3),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (notes == null) return;
+    try {
+      await _sql.updateAppointmentNotes(appointment.id, notes);
+      if (mounted) {
+        setState(() {
+          _appointments = _sql.appointments();
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not update appointment: ${AppError.message(error)}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-
-      // App Bar
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Appointments',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black,
-        ),
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // Upcoming Appointment
-            const Text(
-              'Upcoming Appointment',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  // Doctor
-                  const Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        child: Icon(Icons.person),
-                      ),
-                      SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Dr. Mohau Mogorosi',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'General Practitioner',
-                            style: TextStyle(
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
+      appBar: AppBar(title: const Text('My Appointments')),
+      body: FutureBuilder<List<dynamic>>(
+        future: _appointments,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Unable to load appointments.\n${AppError.message(snapshot.error!)}', textAlign: TextAlign.center),
+            );
+          }
+          final appointments = snapshot.data!;
+          if (appointments.isEmpty) return const Center(child: Text('No appointments found'));
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: appointments.length,
+            itemBuilder: (context, index) {
+              final appointment = appointments[index];
+              final status = appointment.status ?? 'confirmed';
+              return Card(
+                child: ListTile(
+                  title: Text(appointment.reason?.isNotEmpty == true ? appointment.reason! : 'Appointment'),
+                  subtitle: Text('${appointment.clinic.name} - ${appointment.service.name}\n${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year} at ${appointment.startTime}'),
+                  isThreeLine: true,
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'cancel') _cancel(appointment);
+                      if (value == 'edit') _editNotes(appointment);
+                    },
+                    itemBuilder: (_) => [
+                      if (status == 'confirmed') const PopupMenuItem(value: 'edit', child: Text('Edit notes')),
+                      if (status == 'confirmed') const PopupMenuItem(value: 'cancel', child: Text('Cancel appointment')),
                     ],
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Date
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today,
-                        color: Color(0xFF2F80ED),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Tomorrow',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Time
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.access_time,
-                        color: Color(0xFF2F80ED),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        '10:00 AM',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Status
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Confirmed',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

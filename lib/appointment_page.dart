@@ -1,371 +1,166 @@
 import 'package:flutter/material.dart';
+import 'services/app_error.dart';
+import 'services/sql_service.dart';
 
 class AppointmentPage extends StatefulWidget {
-  const AppointmentPage({super.key});
+  final String clinicId;
+
+  const AppointmentPage({super.key, required this.clinicId});
 
   @override
   State<AppointmentPage> createState() => _AppointmentPageState();
 }
 
 class _AppointmentPageState extends State<AppointmentPage> {
-  String selectedDoctor = 'Select healthcare professional';
-  DateTime? selectedDate;
-  TimeOfDay? selectedTime;
+  final SqlService _sql = SqlService();
+  final TextEditingController _reason = TextEditingController();
+  String? _workerId;
+  String? _serviceId;
+  DateTime? _date;
+  TimeOfDay? _time;
+  bool _loading = true;
+  bool _saving = false;
+  String? _error;
+  List<dynamic> _workers = [];
+  List<dynamic> _services = [];
 
-  final TextEditingController reasonController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _loadOptions();
+  }
 
-  // Healthcare Professional
-  final List<String> doctors = [
-    'Dr. Mohau Mogorosi',
-    'Dr. Onkabetse Kgosana',
-    'Dr. Mbalenhle Motloung',
-  ];
-
-  // Select Date
-  Future<void> selectDate() async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2035),
-    );
-
-    if (pickedDate != null) {
+  Future<void> _loadOptions() async {
+    try {
+      final results = await Future.wait([
+        _sql.healthcareWorkers(widget.clinicId),
+        _sql.services(widget.clinicId),
+      ]);
+      if (!mounted) return;
       setState(() {
-        selectedDate = pickedDate;
+        _workers = results[0];
+        _services = results[1];
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = AppError.message(error);
+        _loading = false;
       });
     }
   }
 
-  // Select Time
-  Future<void> selectTime() async {
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (pickedTime != null) {
-      setState(() {
-        selectedTime = pickedTime;
-      });
-    }
-  }
-
-
-  // Confirm Appointment
-void confirmAppointment() {
-  if (selectedDoctor == 'Select healthcare professional') {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select a healthcare professional.'),
-      ),
-    );
-    return;
-  }
-
-  if (reasonController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please enter the reason for your visit.'),
-      ),
-    );
-    return;
-  }
-
-  if (selectedDate == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select an appointment date.'),
-      ),
-    );
-    return;
-  }
-
-  if (selectedTime == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please select an appointment time.'),
-      ),
-    );
-    return;
-  }
-
-  // Appointment Confirmed
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Appointment Confirmed'),
-
-        content: Text(
-          'Your appointment with $selectedDoctor '
-          'has been booked successfully.',
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('OK'),
-          ),
-        ],
+  Future<void> _book() async {
+    if (_workerId == null || _serviceId == null || _date == null || _time == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select a doctor, service, date, and time.')),
       );
-    },
-  );
-}
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final start = '${_time!.hour.toString().padLeft(2, '0')}:${_time!.minute.toString().padLeft(2, '0')}';
+      final endHour = (_time!.hour + 1) % 24;
+      final end = '${endHour.toString().padLeft(2, '0')}:${_time!.minute.toString().padLeft(2, '0')}';
+      await _sql.createAppointment(
+        clinicId: widget.clinicId,
+        serviceId: _serviceId!,
+        healthcareWorkerId: _workerId!,
+        appointmentDate: _date!,
+        startTime: start,
+        endTime: end,
+        reason: _reason.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Appointment booked successfully.')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not book appointment: ${AppError.message(error)}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   void dispose() {
-    reasonController.dispose();
+    _reason.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Book Appointment')),
+        body: Center(child: Text('Unable to load booking options.\n$_error', textAlign: TextAlign.center)),
+      );
+    }
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-
-      // App Bar
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Book Appointment',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black,
-        ),
-      ),
-
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text('Book Appointment')),
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // Healthcare Professional
-            const Text(
-              'Healthcare Professional',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedDoctor,
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem(
-                      value: 'Select healthcare professional',
-                      child: Text(
-                        'Select healthcare professional',
-                      ),
-                    ),
-                    ...doctors.map(
-                      (doctor) => DropdownMenuItem(
-                        value: doctor,
-                        child: Text(doctor),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedDoctor = value!;
-                    });
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // Next Available Appointment
-            const Text(
-              'Next Available Appointment',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF4FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: Color(0xFF2F80ED),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Next available: Tomorrow at 10:00 AM',
-                    style: TextStyle(
-                      color: Color(0xFF2F80ED),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // Reason for Visit
-            const Text(
-              'Reason for Visit',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: reasonController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Enter reason for your appointment',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // Date
-            const Text(
-              'Date',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            InkWell(
-              onTap: selectDate,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(17),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      color: Color(0xFF2F80ED),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      selectedDate == null
-                          ? 'Select date'
-                          : '${selectedDate!.day}/'
-                              '${selectedDate!.month}/'
-                              '${selectedDate!.year}',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // Time
-            const Text(
-              'Time',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            InkWell(
-              onTap: selectTime,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(17),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.access_time,
-                      color: Color(0xFF2F80ED),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      selectedTime == null
-                          ? 'Select time'
-                          : selectedTime!.format(context),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 35),
-
-            // Confirm Appointment
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: confirmAppointment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2F80ED),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Confirm Appointment',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-          ],
-        ),
+        children: [
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Healthcare professional'),
+            items: _workers.map((worker) => DropdownMenuItem<String>(
+              value: worker.id,
+              child: Text('${worker.user.firstName} ${worker.user.lastName}'),
+            )).toList(),
+            onChanged: (value) => setState(() => _workerId = value),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Service'),
+            items: _services.map((service) => DropdownMenuItem<String>(
+              value: service.id,
+              child: Text(service.name),
+            )).toList(),
+            onChanged: (value) => setState(() => _serviceId = value),
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            title: Text(_date == null ? 'Select date' : '${_date!.day}/${_date!.month}/${_date!.year}'),
+            leading: const Icon(Icons.calendar_today),
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                firstDate: DateTime.now(),
+                lastDate: DateTime(2035),
+                initialDate: DateTime.now(),
+              );
+              if (date != null) setState(() => _date = date);
+            },
+          ),
+          ListTile(
+            title: Text(_time == null ? 'Select time' : _time!.format(context)),
+            leading: const Icon(Icons.access_time),
+            onTap: () async {
+              final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+              if (time != null) setState(() => _time = time);
+            },
+          ),
+          TextField(
+            controller: _reason,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Reason for visit'),
+          ),
+          const SizedBox(height: 28),
+          FilledButton(
+            onPressed: _saving ? null : _book,
+            child: Text(_saving ? 'Booking...' : 'Book appointment'),
+          ),
+        ],
       ),
     );
   }

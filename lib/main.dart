@@ -1,7 +1,15 @@
-import 'home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'home_page.dart';
+import 'providers/app_providers.dart';
+import 'services/auth_service.dart';
+import 'services/firebase_service.dart';
+import 'services/app_error.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseService.initialize();
   runApp(const HealthBridgeApp());
 }
 
@@ -10,18 +18,33 @@ class HealthBridgeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Health Bridge',
-      theme: ThemeData(
-        fontFamily: 'Arial',
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2F80ED),
+    return AppProviders(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Health Bridge',
+        theme: ThemeData(
+          fontFamily: 'Arial',
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2F80ED)),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        home: const AuthWrapper(),
       ),
-      home: const LoginPage(),
     );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<User?>();
+
+    if (user != null) {
+      return const HomePage();
+    } else {
+      return const LoginPage();
+    }
   }
 }
 
@@ -33,39 +56,64 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool hidePassword = true;
+  bool isLoading = false;
 
   @override
   void dispose() {
-    phoneController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
- 
-  void login() {
-  if (phoneController.text.isEmpty ||
-      passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Please enter your phone number and password.',
+  Future<void> login() async {
+    final email = emailController.text.trim();
+    if (email.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Please enter your email and password.'),
         ),
-      ),
-    );
-    return;
-  }
+      );
+      return;
+    }
 
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const HomePage(),
-    ),
-  );
-}
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Enter a valid email address.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final authService = context.read<AuthService>();
+      await authService.signInWithEmailAndPassword(
+        email,
+        passwordController.text,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(AppError.message(e)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +126,6 @@ class _LoginPageState extends State<LoginPage> {
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
-
                 const SizedBox(height: 35),
 
                 // Health Bridge logo / icon area
@@ -113,10 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                 // Login heading
                 const Text(
                   'Login',
-                  style: TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600),
                 ),
 
                 const SizedBox(height: 8),
@@ -127,16 +171,14 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const Text(
                       "Don't have an account? ",
-                      style: TextStyle(
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(color: Colors.grey),
                     ),
 
                     GestureDetector(
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Registration coming soon.'),
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const RegistrationPage(),
                           ),
                         );
                       },
@@ -153,11 +195,11 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 35),
 
-                // Phone number
+                // Email
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Phone Number',
+                    'Email',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -169,17 +211,12 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 8),
 
                 TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    hintText: 'Enter phone number',
-                    prefixText: '+27  ',
-                    prefixStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                    hintText: 'Enter your email',
                     prefixIcon: const Icon(
-                      Icons.phone,
+                      Icons.email_outlined,
                       color: Color(0xFF2F80ED),
                     ),
                     filled: true,
@@ -206,7 +243,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-               const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
                 // Password
                 TextField(
@@ -225,9 +262,7 @@ class _LoginPageState extends State<LoginPage> {
                         });
                       },
                       icon: Icon(
-                        hidePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                        hidePassword ? Icons.visibility_off : Icons.visibility,
                       ),
                     ),
                     filled: true,
@@ -252,9 +287,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                     child: const Text(
                       'Forgot Password?',
-                      style: TextStyle(
-                        color: Color(0xFF2F80ED),
-                      ),
+                      style: TextStyle(color: Color(0xFF2F80ED)),
                     ),
                   ),
                 ),
@@ -266,7 +299,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: login,
+                    onPressed: isLoading ? null : login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2F80ED),
                       foregroundColor: Colors.white,
@@ -274,13 +307,22 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -289,25 +331,15 @@ class _LoginPageState extends State<LoginPage> {
                 // Divider
                 Row(
                   children: [
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey.shade300,
-                      ),
-                    ),
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         'Or continue with',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(color: Colors.grey),
                       ),
                     ),
-                    Expanded(
-                      child: Divider(
-                        color: Colors.grey.shade300,
-                      ),
-                    ),
+                    Expanded(child: Divider(color: Colors.grey.shade300)),
                   ],
                 ),
 
@@ -317,12 +349,8 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-
                     // Facebook
-                    _socialButton(
-                      icon: Icons.facebook,
-                      onPressed: () {},
-                    ),
+                    _socialButton(icon: Icons.facebook, onPressed: () {}),
 
                     const SizedBox(width: 20),
 
@@ -356,9 +384,376 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(
-          icon,
-          color: const Color(0xFF2F80ED),
+        icon: Icon(icon, color: const Color(0xFF2F80ED)),
+      ),
+    );
+  }
+}
+
+class RegistrationPage extends StatefulWidget {
+  const RegistrationPage({super.key});
+
+  @override
+  State<RegistrationPage> createState() => _RegistrationPageState();
+}
+
+class _RegistrationPageState extends State<RegistrationPage> {
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+
+  bool hidePassword = true;
+  bool hideConfirmPassword = true;
+  bool isLoading = false;
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email is required';
+    }
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value.trim())) {
+      return 'Enter a valid email address';
+    }
+    return null;
+  }
+
+  String? _validateRequired(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+    if (value != passwordController.text) {
+      return 'Passwords do not match';
+    }
+    return null;
+  }
+
+  Future<void> register() async {
+    // Validate all fields
+    final firstNameError = _validateRequired(firstNameController.text.trim(), 'First name');
+    final lastNameError = _validateRequired(lastNameController.text.trim(), 'Last name');
+    final emailError = _validateEmail(emailController.text.trim());
+    final passwordError = _validatePassword(passwordController.text);
+    final confirmPasswordError = _validateConfirmPassword(confirmPasswordController.text);
+
+    if (firstNameError != null ||
+        lastNameError != null ||
+        emailError != null ||
+        passwordError != null ||
+        confirmPasswordError != null) {
+      // Show first error
+      final error = firstNameError ??
+          lastNameError ??
+          emailError ??
+          passwordError ??
+          confirmPasswordError;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(error!),
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final authService = context.read<AuthService>();
+      await authService.registerWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+        firstName: firstNameController.text.trim(),
+        lastName: lastNameController.text.trim(),
+        phoneNumber: phoneController.text.trim().isEmpty
+            ? null
+            : phoneController.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Registration successful!'),
+          ),
+        );
+        Navigator.of(context).pop(); // Go back to login page
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(AppError.message(e)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF2F80ED)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+
+                // App name
+                const Text(
+                  'Health Bridge',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2F80ED),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Register heading
+                const Text(
+                  'Create Account',
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Enter your details to get started',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+
+                const SizedBox(height: 30),
+
+                // First Name
+                _buildLabel('First Name'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: firstNameController,
+                  hintText: 'Enter your first name',
+                  prefixIcon: Icons.person_outline,
+                ),
+
+                const SizedBox(height: 20),
+
+                // Last Name
+                _buildLabel('Last Name'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: lastNameController,
+                  hintText: 'Enter your last name',
+                  prefixIcon: Icons.person_outline,
+                ),
+
+                const SizedBox(height: 20),
+
+                // Email
+                _buildLabel('Email'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: emailController,
+                  hintText: 'Enter your email',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+
+                const SizedBox(height: 20),
+
+                // Phone Number
+                _buildLabel('Phone Number (Optional)'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: phoneController,
+                  hintText: 'Enter your phone number',
+                  prefixIcon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                ),
+
+                const SizedBox(height: 20),
+
+                // Password
+                _buildLabel('Password'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: passwordController,
+                  hintText: 'Enter password (min 6 chars)',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText: hidePassword,
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() => hidePassword = !hidePassword);
+                    },
+                    icon: Icon(
+                      hidePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Confirm Password
+                _buildLabel('Confirm Password'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  controller: confirmPasswordController,
+                  hintText: 'Confirm your password',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText: hideConfirmPassword,
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() => hideConfirmPassword = !hideConfirmPassword);
+                    },
+                    icon: Icon(
+                      hideConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Register button
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2F80ED),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Login link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Already have an account? ',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Login',
+                        style: TextStyle(
+                          color: Color(0xFF2F80ED),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.grey.shade700,
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData prefixIcon,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: hintText,
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF2F80ED)),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: const Color(0xFFF7F9FC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
       ),
     );

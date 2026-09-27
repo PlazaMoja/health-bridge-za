@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dataconnect_generated/generated.dart';
+import 'main.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  Future<Map<String, dynamic>?> _loadUserData(String uid) async {
+    final result = await HealthbridgeConnector.instance
+      .getUser(firebaseUid: uid)
+      .execute();
+    final user = result.data.user;
+    return user == null
+      ? null
+      : {
+        'firstName': user.firstName,
+        'lastName': user.lastName,
+        'email': user.email,
+        'phoneNumber': user.phoneNumber,
+        'role': user.role,
+        };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
 
-      // App Bar
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -24,110 +44,183 @@ class ProfilePage extends StatelessWidget {
         ),
       ),
 
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
+      body: user == null
+          ? const Center(
+              child: Text('Please login to view profile'),
+            )
+          : FutureBuilder<Map<String, dynamic>?>(
+              future: _loadUserData(user.uid),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
 
-          // Profile Information
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Column(
-              children: [
-                CircleAvatar(
-                  radius: 45,
-                  child: Icon(
-                    Icons.person,
-                    size: 50,
-                  ),
-                ),
+                final userData = snapshot.data;
+                final firstName = userData?['firstName'] ?? '';
+                final lastName = userData?['lastName'] ?? '';
+                final fullName = '$firstName $lastName'.trim().isEmpty
+                    ? (user.displayName ?? 'User')
+                    : '$firstName $lastName';
+                final email = userData?['email'] ?? user.email ?? '';
+                final phoneNumber = userData?['phoneNumber'] ?? '';
+                final role = userData?['role'] ?? 'patient';
 
-                SizedBox(height: 15),
+                return ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 45,
+                            backgroundColor: const Color(0xFFEAF4FF),
+                            child: Text(
+                              fullName.isNotEmpty
+                                  ? fullName[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                fontSize: 40,
+                                color: Color(0xFF2F80ED),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
 
-                Text(
-                  'Kamogelo',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                          const SizedBox(height: 15),
 
-                SizedBox(height: 5),
+                          Text(
+                            fullName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
 
-                Text(
-                  'kamogelo@example.com',
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
+                          const SizedBox(height: 5),
 
-          const SizedBox(height: 25),
+                          Text(
+                            email,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                            ),
+                          ),
 
-          // Account Settings
-          const Text(
-            'Account',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+                          if (phoneNumber.isNotEmpty) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              phoneNumber,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
 
-          const SizedBox(height: 15),
+                          const SizedBox(height: 10),
 
-          _profileOption(
-            icon: Icons.person_outline,
-            title: 'Personal Information',
-            onTap: () {},
-          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: role == 'patient'
+                                  ? Colors.blue.shade50
+                                  : Colors.purple.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              role.toUpperCase(),
+                              style: TextStyle(
+                                color: role == 'patient'
+                                    ? Colors.blue
+                                    : Colors.purple,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-          _profileOption(
-            icon: Icons.lock_outline,
-            title: 'Privacy & Security',
-            onTap: () {},
-          ),
+                    const SizedBox(height: 25),
 
-          _profileOption(
-            icon: Icons.notifications_none,
-            title: 'Notifications',
-            onTap: () {},
-          ),
+                    const Text(
+                      'Account',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
 
-          _profileOption(
-            icon: Icons.settings_outlined,
-            title: 'Settings',
-            onTap: () {},
-          ),
+                    const SizedBox(height: 15),
 
-          const SizedBox(height: 25),
+                    _profileOption(
+                      icon: Icons.person_outline,
+                      title: 'Personal Information',
+                      onTap: () {},
+                    ),
 
-          // Logout
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.pop(context);
+                    _profileOption(
+                      icon: Icons.lock_outline,
+                      title: 'Privacy & Security',
+                      onTap: () {},
+                    ),
+
+                    _profileOption(
+                      icon: Icons.notifications_none,
+                      title: 'Notifications',
+                      onTap: () {},
+                    ),
+
+                    _profileOption(
+                      icon: Icons.settings_outlined,
+                      title: 'Settings',
+                      onTap: () {},
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (context.mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                        ),
+                        child: const Text(
+                          'Log Out',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
               },
-              child: const Text(
-                'Log Out',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 
-  // Profile Option
   Widget _profileOption({
     required IconData icon,
     required String title,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'appointment_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'appointments_page.dart';
 import 'clinics_page.dart';
 import 'consult_page.dart';
@@ -19,6 +19,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final firstName = FirebaseAuth.instance.currentUser?.displayName
+        ?.trim()
+        .split(RegExp(r'\s+'))
+        .first;
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
 
@@ -28,18 +32,12 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         title: const Text(
           'Health Bridge',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             onPressed: () {},
-            icon: const Icon(
-              Icons.notifications_none,
-              color: Colors.black,
-            ),
+            icon: const Icon(Icons.notifications_none, color: Colors.black),
           ),
         ],
       ),
@@ -49,24 +47,17 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // Welcome
-            const Text(
-              'Hello, Kamogelo!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            Text(
+              'Hello, ${firstName?.isNotEmpty == true ? firstName : 'there'}!',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 5),
 
             const Text(
               'How can we help you today?',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 15, color: Colors.grey),
             ),
 
             const SizedBox(height: 25),
@@ -74,17 +65,13 @@ class _HomePageState extends State<HomePage> {
             // Quick Access
             const Text(
               'Quick Access',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 15),
 
             Row(
               children: [
-
                 // Book Appointment
                 Expanded(
                   child: _quickAction(
@@ -94,8 +81,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const AppointmentPage(),
+                          builder: (context) => const ClinicsPage(),
                         ),
                       );
                     },
@@ -113,8 +99,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const ConsultPage(),
+                          builder: (context) => const ConsultPage(),
                         ),
                       );
                     },
@@ -127,23 +112,21 @@ class _HomePageState extends State<HomePage> {
 
             Row(
               children: [
-
-
                 // Order Medication
-               Expanded(
-                     child: _quickAction(
-    icon: Icons.medication_outlined,
-    title: 'Order\nMedication',
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const MedicationPage(),
-        ),
-      );
-    },
-  ),
-),
+                Expanded(
+                  child: _quickAction(
+                    icon: Icons.medication_outlined,
+                    title: 'Order\nMedication',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MedicationPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
                 const SizedBox(width: 12),
 
@@ -156,8 +139,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const ClinicsPage(),
+                          builder: (context) => const ClinicsPage(),
                         ),
                       );
                     },
@@ -171,10 +153,7 @@ class _HomePageState extends State<HomePage> {
             // Health Services
             const Text(
               'Health Services',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 15),
@@ -198,8 +177,7 @@ class _HomePageState extends State<HomePage> {
 
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Your Health Matters',
@@ -212,9 +190,7 @@ class _HomePageState extends State<HomePage> {
                         Text(
                           'Access healthcare services '
                           'quickly and easily.',
-                          style: TextStyle(
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
@@ -240,49 +216,33 @@ class _HomePageState extends State<HomePage> {
           if (index == 1) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const AppointmentsPage(),
-              ),
+              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
             );
           }
 
           if (index == 2) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const ConsultPage(),
-              ),
+              MaterialPageRoute(builder: (context) => const ConsultPage()),
             );
           }
 
-         
+          if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RecordsPage()),
+            );
+          }
 
-         if (index == 3) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const RecordsPage(),
-    ),
-  );
-} 
-
-if (index == 4) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const ProfilePage(),
-    ),
-  );
-}
-
-
+          if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfilePage()),
+            );
+          }
         },
 
-
         destinations: const [
-
           // Home
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -341,20 +301,14 @@ if (index == 4) {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 35,
-              color: const Color(0xFF2F80ED),
-            ),
+            Icon(icon, size: 35, color: const Color(0xFF2F80ED)),
 
             const SizedBox(height: 10),
 
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ],
         ),

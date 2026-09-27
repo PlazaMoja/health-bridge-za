@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/postgres_service.dart';
 
 class MedicationPage extends StatefulWidget {
   const MedicationPage({super.key});
@@ -8,133 +9,158 @@ class MedicationPage extends StatefulWidget {
 }
 
 class _MedicationPageState extends State<MedicationPage> {
-  String selectedCategory = 'Headache & Pain';
+  String selectedCategory = 'All';
+  List<dynamic> medications = [];
+  bool isLoading = true;
+  String? errorMessage;
 
-  final Map<String, List<Map<String, String>>> medications = {
-    'Headache & Pain': [
-      {
-        'name': 'Paracetamol',
-        'type': 'Pain and fever relief',
-      },
-      {
-        'name': 'Ibuprofen',
-        'type': 'Pain and inflammation relief',
-      },
-      {
-        'name': 'Aspirin',
-        'type': 'Pain and fever relief',
-      },
-      {
-        'name': 'Diclofenac',
-        'type': 'Pain and inflammation relief',
-      },
-      {
-        'name': 'Topical pain relief gel',
-        'type': 'Local muscle and joint pain relief',
-      },
-    ],
+  final PostgresService _postgresService = PostgresService();
 
-    'Cough & Cold': [
-      {
-        'name': 'Saline nasal spray',
-        'type': 'Helps relieve blocked or dry nose',
-      },
-      {
-        'name': 'Guaifenesin',
-        'type': 'Expectorant for mucus',
-      },
-      {
-        'name': 'Dextromethorphan',
-        'type': 'Cough suppressant',
-      },
-      {
-        'name': 'Menthol lozenges',
-        'type': 'Soothes throat irritation',
-      },
-      {
-        'name': 'Honey-based cough mixture',
-        'type': 'Soothes cough and throat irritation',
-      },
-    ],
+  @override
+  void initState() {
+    super.initState();
+    _loadMedications();
+  }
 
-    'Allergies': [
-      {
-        'name': 'Loratadine',
-        'type': 'Antihistamine',
-      },
-      {
-        'name': 'Cetirizine',
-        'type': 'Antihistamine',
-      },
-      {
-        'name': 'Chlorphenamine',
-        'type': 'Antihistamine',
-      },
-      {
-        'name': 'Saline nasal spray',
-        'type': 'Helps rinse allergens from the nose',
-      },
-      {
-        'name': 'Allergy eye drops',
-        'type': 'Helps relieve itchy or watery eyes',
-      },
-    ],
+  Future<void> _loadMedications() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
 
-    'Diarrhoea & Dehydration': [
-      {
-        'name': 'Oral rehydration solution',
-        'type': 'Replaces fluids and electrolytes',
-      },
-      {
-        'name': 'Oral rehydration salts',
-        'type': 'Helps prevent dehydration',
-      },
-      {
-        'name': 'Zinc supplements',
-        'type': 'May be used in some diarrhoeal illnesses',
-      },
-      {
-        'name': 'Loperamide',
-        'type': 'Symptom relief for some types of diarrhoea',
-      },
-      {
-        'name': 'Electrolyte solution',
-        'type': 'Replaces lost fluids and electrolytes',
-      },
-    ],
+    try {
+      final data = await _postgresService.getList('medications');
+      setState(() {
+        medications = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+        isLoading = false;
+      });
+    }
+  }
 
-    'Heartburn & Indigestion': [
-      {
-        'name': 'Calcium carbonate',
-        'type': 'Antacid',
-      },
-      {
-        'name': 'Magnesium hydroxide',
-        'type': 'Antacid',
-      },
-      {
-        'name': 'Aluminium hydroxide',
-        'type': 'Antacid',
-      },
-      {
-        'name': 'Omeprazole',
-        'type': 'Reduces stomach acid',
-      },
-      {
-        'name': 'Famotidine',
-        'type': 'Reduces stomach acid',
-      },
-    ],
-  };
+  List<dynamic> get filteredMedications {
+    if (selectedCategory == 'All') return medications;
+    return medications.where((med) {
+      final category = med['category']?.toString() ?? '';
+      return category == selectedCategory;
+    }).toList();
+  }
+
+  List<String> get categories {
+    final cats = medications
+        .map((med) => med['category']?.toString() ?? 'Other')
+        .toSet()
+        .toList();
+    cats.sort();
+    return ['All', ...cats];
+  }
+
+  Widget _buildMedicationItem(dynamic medication) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF4FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.medication_outlined,
+              color: Color(0xFF2F80ED),
+            ),
+          ),
+
+          const SizedBox(width: 15),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  medication['name'] ?? 'Unknown',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  medication['description'] ?? medication['type'] ?? '',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          ElevatedButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text('Order Medication'),
+                    content: Text(
+                      'You selected ${medication['name']}. '
+                      'A pharmacist or healthcare professional '
+                      'should confirm that it is appropriate '
+                      'for you before purchase.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${medication['name']} added to order.',
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('Add'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: const Text('Order'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final availableMedication = medications[selectedCategory]!;
+    final availableMedications = filteredMedications;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
 
-      // App Bar
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -150,150 +176,71 @@ class _MedicationPageState extends State<MedicationPage> {
         ),
       ),
 
-      body: Column(
-        children: [
-
-          // Category Selection
-          SizedBox(
-            height: 60,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
-              children: medications.keys.map((category) {
-                final isSelected = category == selectedCategory;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: ChoiceChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        selectedCategory = category;
-                      });
-                    },
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : errorMessage != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Text('Error: $errorMessage'),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _loadMedications,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          // Medication List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: availableMedication.length,
-              itemBuilder: (context, index) {
-                final medication = availableMedication[index];
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-
-                      // Medication Icon
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAF4FF),
-                          borderRadius: BorderRadius.circular(12),
+                )
+              : Column(
+                  children: [
+                    SizedBox(
+                      height: 60,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
                         ),
-                        child: const Icon(
-                          Icons.medication_outlined,
-                          color: Color(0xFF2F80ED),
-                        ),
-                      ),
+                        children: categories.map((category) {
+                          final isSelected = category == selectedCategory;
 
-                      const SizedBox(width: 15),
-
-                      // Medication Information
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              medication['name']!,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: ChoiceChip(
+                              label: Text(category),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  selectedCategory = category;
+                                });
+                              },
                             ),
-
-                            const SizedBox(height: 5),
-
-                            Text(
-                              medication['type']!,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Order Button
-                      ElevatedButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text(
-                                  'Order Medication',
-                                ),
-                                content: Text(
-                                  'You selected ${medication['name']}. '
-                                  'A pharmacist or healthcare professional '
-                                  'should confirm that it is appropriate '
-                                  'for you before purchase.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            '${medication['name']} added to order.',
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Add'),
-                                  ),
-                                ],
-                              );
-                            },
                           );
-                        },
-                        child: const Text('Order'),
+                        }).toList(),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                    ),
+
+                    Expanded(
+                      child: availableMedications.isEmpty
+                          ? const Center(
+                              child: Text('No medications found'),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(20),
+                              itemCount: availableMedications.length,
+                              itemBuilder: (context, index) {
+                                return _buildMedicationItem(
+                                    availableMedications[index]);
+                              },
+                            ),
+                    ),
+                  ],
+                ),
     );
   }
 }
