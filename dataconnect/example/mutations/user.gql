@@ -1,0 +1,19 @@
+mutation InsertUser(
+  $firebaseUid: String!
+  $email: String!
+  $firstName: String!
+  $lastName: String!
+  $phoneNumber: String
+  $role: String
+) @auth(level: USER) {
+  user_insert(
+    data: {
+      firebaseUid: $firebaseUid
+      email: $email
+      firstName: $firstName
+      lastName: $lastName
+      phoneNumber: $phoneNumber
+      role: $role
+    }
+  )
+}

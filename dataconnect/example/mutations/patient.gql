@@ -1,0 +1,3 @@
+mutation InsertPatient($userId: UUID!) @auth(level: USER) {
+  patient_insert(data: { userId: $userId })
+}

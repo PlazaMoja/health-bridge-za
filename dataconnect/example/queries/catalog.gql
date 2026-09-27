@@ -1,0 +1,73 @@
+query ListClinics @auth(level: USER) {
+  clinics(where: { isActive: { eq: true } }, orderBy: { name: ASC }) {
+    id
+    name
+    province
+    municipality
+    isActive
+    address
+    latitude
+    longitude
+    phoneNumber
+    openingTime
+    closingTime
+  }
+}
+
+query ListHealthcareWorkers($clinicId: UUID!) @auth(level: USER) {
+  healthcareWorkers(
+    where: { clinic: { id: { eq: $clinicId } }, isActive: { eq: true } }
+  ) {
+    id
+    user { firstName lastName }
+    profession
+    specialization
+    isActive
+  }
+}
+
+query ListServices($clinicId: UUID!) @auth(level: USER) {
+  services(where: { clinic: { id: { eq: $clinicId } } }) {
+    id
+    name
+  }
+}
+
+query ListAppointments($patientId: UUID!) @auth(level: USER) {
+  appointments(
+    where: { patient: { id: { eq: $patientId } } }
+    orderBy: { appointmentDate: DESC }
+  ) {
+    id
+    appointmentDate
+    startTime
+    endTime
+    status
+    reason
+    clinic { name }
+    service { name }
+  }
+}
+
+query ListMedicalRecords($patientId: UUID!) @auth(level: USER) {
+  medicalRecords(
+    where: { patient: { id: { eq: $patientId } } }
+    orderBy: { visitDate: DESC }
+  ) {
+    id
+    visitDate
+    diagnosis
+    notes
+    clinic { name }
+  }
+}
+
+query ListAllHealthcareWorkers @auth(level: USER) {
+  healthcareWorkers(where: { isActive: { eq: true } }) {
+    id
+    user { firstName lastName }
+    profession
+    specialization
+    isActive
+  }
+}

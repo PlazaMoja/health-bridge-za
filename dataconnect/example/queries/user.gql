@@ -1,0 +1,32 @@
+query GetUser($firebaseUid: String!) @auth(level: USER) {
+  user(first: { where: { firebaseUid: { eq: $firebaseUid } } }) {
+    id
+    firebaseUid
+    email
+    firstName
+    lastName
+    phoneNumber
+    role
+    createdAt
+    updatedAt
+  }
+}
+
+query GetPatientByUserId($userId: UUID!) @auth(level: USER) {
+  patient(first: { where: { user: { id: { eq: $userId } } } }) {
+    id
+  }
+}
+
+query GetUserByEmail($email: String!) @auth(level: USER) {
+  users(where: { email: { eq: $email } }) {
+    firebaseUid
+    email
+    firstName
+    lastName
+    phoneNumber
+    role
+    createdAt
+    updatedAt
+  }
+}

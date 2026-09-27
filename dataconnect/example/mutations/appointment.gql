@@ -1,0 +1,38 @@
+mutation InsertAppointment(
+  $patientId: UUID!
+  $clinicId: UUID!
+  $serviceId: UUID!
+  $healthcareWorkerId: UUID
+  $appointmentDate: Date!
+  $startTime: String!
+  $endTime: String
+  $reason: String
+) @auth(level: USER) {
+  appointment_insert(data: {
+    patientId: $patientId
+    clinicId: $clinicId
+    serviceId: $serviceId
+    healthcareWorkerId: $healthcareWorkerId
+    appointmentDate: $appointmentDate
+    startTime: $startTime
+    endTime: $endTime
+    reason: $reason
+    status: "confirmed"
+  })
+}
+
+mutation UpdateAppointment(
+  $id: UUID!
+  $status: String
+  $reason: String
+  $cancellationReason: String
+) @auth(level: USER) {
+  appointment_update(
+    id: $id
+    data: {
+      status: $status
+      reason: $reason
+      cancellationReason: $cancellationReason
+    }
+  )
+}

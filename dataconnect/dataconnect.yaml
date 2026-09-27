@@ -1,0 +1,11 @@
+specVersion: "v1"
+serviceId: "health-28c44-service"
+location: "us-east4"
+schemas:
+  - source: "./schema"
+    datasource:
+      postgresql:
+        database: "healthbridge"
+        cloudSql:
+          instanceId: "health-28c44-instance"
+connectorDirs: ["./example"]

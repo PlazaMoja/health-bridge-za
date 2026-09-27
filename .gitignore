@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/dataconnect/.dataconnect/pgliteData/
 
 # Symbolication related
 app.*.symbols

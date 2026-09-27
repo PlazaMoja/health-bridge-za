@@ -1,0 +1,79 @@
+type User @table {
+  firebaseUid: String! @unique
+  email: String!
+  firstName: String!
+  lastName: String!
+  phoneNumber: String
+  role: String!
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type Clinic @table {
+  name: String!
+  province: String!
+  municipality: String!
+  isActive: Boolean!
+  address: String
+  latitude: Float
+  longitude: Float
+  phoneNumber: String
+  openingTime: String
+  closingTime: String
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type HealthcareWorker @table {
+  user: User!
+  clinic: Clinic!
+  profession: String
+  specialization: String
+  isActive: Boolean
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type Patient @table {
+  user: User!
+  preferredClinic: Clinic
+  dateOfBirth: Date
+  gender: String
+  emergencyContactPhone: String
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type Service @table {
+  clinic: Clinic!
+  name: String!
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type Appointment @table {
+  patient: Patient!
+  clinic: Clinic!
+  service: Service!
+  appointmentDate: Date!
+  startTime: String!
+  endTime: String
+  healthcareWorker: HealthcareWorker
+  status: String
+  reason: String
+  cancellationReason: String
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type MedicalRecord @table {
+  patient: Patient!
+  clinic: Clinic!
+  healthcareWorker: HealthcareWorker!
+  visitDate: Date!
+  appointment: Appointment
+  diagnosis: String
+  notes: String
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
