@@ -1,0 +1,16 @@
+# --- NEVER commit the Firebase admin key ---
+serviceAccountKey.json
+*firebase-adminsdk*.json
+
+# Build output
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+nbproject/
+nbactions.xml

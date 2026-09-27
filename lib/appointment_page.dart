@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'models.dart';
+import 'session.dart';
 
 class AppointmentPage extends StatefulWidget {
   const AppointmentPage({super.key});
@@ -14,12 +17,44 @@ class _AppointmentPageState extends State<AppointmentPage> {
 
   final TextEditingController reasonController = TextEditingController();
 
-  // Healthcare Professional
-  final List<String> doctors = [
-    'Dr. Mohau Mogorosi',
-    'Dr. Onkabetse Kgosana',
-    'Dr. Mbalenhle Motloung',
-  ];
+  // Healthcare Professionals now come from the database (via the backend)
+  List<Doctor> doctors = [];
+  bool isLoadingDoctors = true;
+  bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadDoctors();
+  }
+
+  Future<void> loadDoctors() async {
+    setState(() => isLoadingDoctors = true);
+    try {
+      final result = await ApiService.getDoctors();
+      if (!mounted) return;
+      setState(() {
+        doctors = result;
+        isLoadingDoctors = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => isLoadingDoctors = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          action: SnackBarAction(label: 'Retry', onPressed: loadDoctors),
+        ),
+      );
+    }
+  }
+
+  // Formats for the backend: date as yyyy-MM-dd, time as HH:mm (24-hour)
+  String _two(int n) => n.toString().padLeft(2, '0');
+  String get _dateForApi =>
+      '${selectedDate!.year}-${_two(selectedDate!.month)}-${_two(selectedDate!.day)}';
+  String get _timeForApi =>
+      '${_two(selectedTime!.hour)}:${_two(selectedTime!.minute)}';
 
   // Select Date
   Future<void> selectDate() async {
@@ -53,7 +88,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
 
 
   // Confirm Appointment
-void confirmAppointment() {
+Future<void> confirmAppointment() async {
   if (selectedDoctor == 'Select healthcare professional') {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -89,6 +124,40 @@ void confirmAppointment() {
     );
     return;
   }
+
+  final user = Session.currentUser;
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please log in again.'),
+      ),
+    );
+    return;
+  }
+
+  final doctor = doctors.firstWhere((d) => d.name == selectedDoctor);
+
+  // Save the appointment in the database
+  setState(() => isSaving = true);
+  try {
+    await ApiService.bookAppointment(
+      userId: user.id,
+      doctor: doctor,
+      reason: reasonController.text.trim(),
+      date: _dateForApi,
+      time: _timeForApi,
+    );
+  } on ApiException catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.message)),
+    );
+    return;
+  } finally {
+    if (mounted) setState(() => isSaving = false);
+  }
+
+  if (!mounted) return;
 
   // Appointment Confirmed
   showDialog(
@@ -179,12 +248,14 @@ void confirmAppointment() {
                     ),
                     ...doctors.map(
                       (doctor) => DropdownMenuItem(
-                        value: doctor,
-                        child: Text(doctor),
+                        value: doctor.name,
+                        child: Text(doctor.name),
                       ),
                     ),
                   ],
-                  onChanged: (value) {
+                  onChanged: isLoadingDoctors
+                      ? null
+                      : (value) {
                     setState(() {
                       selectedDoctor = value!;
                     });
@@ -345,21 +416,31 @@ void confirmAppointment() {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: confirmAppointment,
+                onPressed: isSaving ? null : confirmAppointment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2F80ED),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFF2F80ED),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Confirm Appointment',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Confirm Appointment',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
 

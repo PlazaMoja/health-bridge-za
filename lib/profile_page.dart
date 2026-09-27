@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'main.dart';
+import 'session.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = Session.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
 
@@ -35,9 +39,9 @@ class ProfilePage extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 45,
                   child: Icon(
                     Icons.person,
@@ -45,21 +49,21 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
 
-                SizedBox(height: 15),
+                const SizedBox(height: 15),
 
                 Text(
-                  'Kamogelo',
-                  style: TextStyle(
+                  user?.name ?? 'Guest',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
 
                 Text(
-                  'kamogelo@example.com',
-                  style: TextStyle(
+                  user?.phone ?? '',
+                  style: const TextStyle(
                     color: Colors.grey,
                   ),
                 ),
@@ -112,7 +116,15 @@ class ProfilePage extends StatelessWidget {
             height: 50,
             child: OutlinedButton(
               onPressed: () {
-                Navigator.pop(context);
+                // Forget the logged-in user and go back to the login screen
+                Session.clear();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                  (route) => false,
+                );
               },
               child: const Text(
                 'Log Out',

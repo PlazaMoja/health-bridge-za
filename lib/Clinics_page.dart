@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'models.dart';
+import 'widgets/load_state.dart';
 
 class ClinicsPage extends StatefulWidget {
   const ClinicsPage({super.key});
@@ -10,41 +13,50 @@ class ClinicsPage extends StatefulWidget {
 class _ClinicsPageState extends State<ClinicsPage> {
   final TextEditingController searchController = TextEditingController();
 
-  final List<Map<String, String>> clinics = [
-    {
-      'name': 'Cape Town Health Clinic',
-      'address': '12 Main Road, Cape Town',
-      'distance': '1.2 km away',
-      'availability': 'Available',
-    },
-    {
-      'name': 'Community Health Centre',
-      'address': '25 Long Street, Cape Town',
-      'distance': '2.4 km away',
-      'availability': 'Available',
-    },
-    {
-      'name': 'City Medical Centre',
-      'address': '45 Loop Street, Cape Town',
-      'distance': '3.1 km away',
-      'availability': 'Busy',
-    },
-  ];
-
-  List<Map<String, String>> filteredClinics = [];
+  // Clinics now come from the database (via the backend)
+  List<Clinic> clinics = [];
+  List<Clinic> filteredClinics = [];
+  bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
     super.initState();
-    filteredClinics = clinics;
+    loadClinics();
+  }
+
+  Future<void> loadClinics() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final result = await ApiService.getClinics();
+      if (!mounted) return;
+      setState(() {
+        clinics = result;
+        filteredClinics = result;
+        isLoading = false;
+      });
+      if (searchController.text.isNotEmpty) {
+        searchClinics(searchController.text);
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = e.message;
+        isLoading = false;
+      });
+    }
   }
 
   // Search Clinics
   void searchClinics(String query) {
     setState(() {
       filteredClinics = clinics.where((clinic) {
-        final name = clinic['name']!.toLowerCase();
-        final address = clinic['address']!.toLowerCase();
+        final name = clinic.name.toLowerCase();
+        final address = clinic.address.toLowerCase();
         final search = query.toLowerCase();
 
         return name.contains(search) ||
@@ -107,7 +119,20 @@ class _ClinicsPageState extends State<ClinicsPage> {
 
           // Clinic List
           Expanded(
-            child: ListView.builder(
+            child: isLoading || errorMessage != null
+                ? LoadState(
+                    isLoading: isLoading,
+                    errorMessage: errorMessage,
+                    onRetry: loadClinics,
+                  )
+                : filteredClinics.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No clinics found.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: filteredClinics.length,
               itemBuilder: (context, index) {
@@ -145,7 +170,7 @@ class _ClinicsPageState extends State<ClinicsPage> {
 
                           Expanded(
                             child: Text(
-                              clinic['name']!,
+                              clinic.name,
                               style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
@@ -168,7 +193,7 @@ class _ClinicsPageState extends State<ClinicsPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              clinic['address']!,
+                              clinic.address,
                               style: const TextStyle(
                                 color: Colors.grey,
                               ),
@@ -189,7 +214,7 @@ class _ClinicsPageState extends State<ClinicsPage> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            clinic['distance']!,
+                            clinic.distance,
                             style: const TextStyle(
                               color: Colors.grey,
                             ),
@@ -211,7 +236,7 @@ class _ClinicsPageState extends State<ClinicsPage> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: clinic['availability'] ==
+                              color: clinic.availability ==
                                       'Available'
                                   ? Colors.green.shade50
                                   : Colors.orange.shade50,
@@ -219,9 +244,9 @@ class _ClinicsPageState extends State<ClinicsPage> {
                                   BorderRadius.circular(20),
                             ),
                             child: Text(
-                              clinic['availability']!,
+                              clinic.availability,
                               style: TextStyle(
-                                color: clinic['availability'] ==
+                                color: clinic.availability ==
                                         'Available'
                                     ? Colors.green
                                     : Colors.orange,
@@ -237,7 +262,7 @@ class _ClinicsPageState extends State<ClinicsPage> {
                                   .showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    '${clinic['name']} selected.',
+                                    '${clinic.name} selected.',
                                   ),
                                 ),
                               );
