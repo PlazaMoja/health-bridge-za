@@ -4,6 +4,7 @@ import 'appointments_page.dart';
 import 'clinics_page.dart';
 import 'consult_page.dart';
 import 'medication_page.dart';
+import 'notifications_page.dart';
 import 'record_page.dart';
 import 'profile_page.dart';
 
@@ -24,20 +25,22 @@ class _HomePageState extends State<HomePage> {
         .split(RegExp(r'\s+'))
         .first;
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
 
       // App Bar
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'Health Bridge',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
+            tooltip: 'Notifications',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotificationsPage()),
+            ),
+            icon: const Icon(Icons.notifications_none),
           ),
         ],
       ),
@@ -162,7 +165,7 @@ class _HomePageState extends State<HomePage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Row(
@@ -295,7 +298,7 @@ class _HomePageState extends State<HomePage> {
         height: 130,
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(

@@ -1,0 +1,39 @@
+# Order Medication
+query ListMedications @auth(level: USER) {
+  medications(
+    where: { isActive: { eq: true } }
+    orderBy: [{ category: ASC }, { sortOrder: ASC }]
+    limit: 200
+  ) {
+    id
+    name
+    type
+    category
+    price
+  }
+}
+
+# My Orders, newest first
+query ListMedicationOrders($patientId: UUID!) @auth(level: USER) {
+  medicationOrders(
+    where: { patient: { id: { eq: $patientId } } }
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    fulfilment
+    deliveryAddress
+    notes
+    subtotal
+    deliveryFee
+    total
+    status
+    createdAt
+    clinic { name }
+    medicationOrderItems_on_order {
+      name
+      quantity
+      unitPrice
+      lineTotal
+    }
+  }
+}

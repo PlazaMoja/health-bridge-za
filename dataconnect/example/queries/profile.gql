@@ -1,0 +1,26 @@
+# Profile > Personal Information
+query GetPatientProfile($userId: UUID!) @auth(level: USER) {
+  patient(first: { where: { user: { id: { eq: $userId } } } }) {
+    id
+    dateOfBirth
+    gender
+    address
+    emergencyContactName
+    emergencyContactPhone
+  }
+}
+
+# Profile > Notifications and Settings
+query GetPreference($userId: UUID!) @auth(level: USER) {
+  preference(first: { where: { user: { id: { eq: $userId } } } }) {
+    id
+    themeMode
+    textSize
+    appointmentReminders
+    reminderTime
+    medicationReminders
+    healthTips
+    promotions
+    shareDataForResearch
+  }
+}

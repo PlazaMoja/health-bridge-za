@@ -1,10 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'cart.dart';
 import 'dataconnect_generated/generated.dart';
 import 'main.dart';
+import 'notifications_page.dart';
+import 'personal_info_page.dart';
+import 'privacy_security_page.dart';
+import 'services/settings_service.dart';
+import 'settings_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  // Opens a profile sub-page, then reloads this page in case the name changed.
+  Future<void> open(Widget page) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+    if (mounted) setState(() {});
+  }
 
   Future<Map<String, dynamic>?> _loadUserData(String uid) async {
     final result = await HealthbridgeConnector.instance
@@ -27,20 +47,14 @@ class ProfilePage extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
 
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'My Profile',
           style: TextStyle(
-            color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black,
         ),
       ),
 
@@ -73,14 +87,14 @@ class ProfilePage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
                         children: [
                           CircleAvatar(
                             radius: 45,
-                            backgroundColor: const Color(0xFFEAF4FF),
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                             child: Text(
                               fullName.isNotEmpty
                                   ? fullName[0].toUpperCase()
@@ -131,8 +145,8 @@ class ProfilePage extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: role == 'patient'
-                                  ? Colors.blue.shade50
-                                  : Colors.purple.shade50,
+                                  ? Colors.blue.withValues(alpha: 0.15)
+                                  : Colors.purple.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -164,25 +178,25 @@ class ProfilePage extends StatelessWidget {
                     _profileOption(
                       icon: Icons.person_outline,
                       title: 'Personal Information',
-                      onTap: () {},
+                      onTap: () => open(const PersonalInfoPage()),
                     ),
 
                     _profileOption(
                       icon: Icons.lock_outline,
                       title: 'Privacy & Security',
-                      onTap: () {},
+                      onTap: () => open(const PrivacySecurityPage()),
                     ),
 
                     _profileOption(
                       icon: Icons.notifications_none,
                       title: 'Notifications',
-                      onTap: () {},
+                      onTap: () => open(const NotificationsPage()),
                     ),
 
                     _profileOption(
                       icon: Icons.settings_outlined,
                       title: 'Settings',
-                      onTap: () {},
+                      onTap: () => open(const SettingsPage()),
                     ),
 
                     const SizedBox(height: 25),
@@ -192,6 +206,8 @@ class ProfilePage extends StatelessWidget {
                       height: 50,
                       child: OutlinedButton(
                         onPressed: () async {
+                          Cart.clear();
+                          SettingsService.reset();
                           await FirebaseAuth.instance.signOut();
                           if (context.mounted) {
                             Navigator.pushReplacement(
@@ -229,7 +245,7 @@ class ProfilePage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
       ),
       child: ListTile(

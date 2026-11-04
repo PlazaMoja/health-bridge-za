@@ -39,6 +39,8 @@ type Patient @table {
   preferredClinic: Clinic
   dateOfBirth: Date
   gender: String
+  address: String
+  emergencyContactName: String
   emergencyContactPhone: String
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -76,4 +78,57 @@ type MedicalRecord @table {
   notes: String
   createdAt: Timestamp
   updatedAt: Timestamp
+}
+
+# ---------- Profile > Notifications / Settings ----------
+# One row per user, created the first time they open Settings or Notifications.
+type Preference @table {
+  user: User!
+  themeMode: String              # "system", "light", "dark"
+  textSize: String               # "small", "normal", "large"
+  appointmentReminders: Boolean
+  reminderTime: String           # "15min", "1hour", "1day"
+  medicationReminders: Boolean
+  healthTips: Boolean
+  promotions: Boolean
+  shareDataForResearch: Boolean
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+# ---------- Order Medication ----------
+type Medication @table {
+  name: String!
+  type: String                   # e.g. "Pain and fever relief"
+  category: String!              # e.g. "Headache & Pain"
+  price: Float!                  # rand
+  isActive: Boolean!
+  sortOrder: Int
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+type MedicationOrder @table {
+  patient: Patient!
+  fulfilment: String!            # "collect" or "delivery"
+  clinic: Clinic                 # set when collecting
+  deliveryAddress: String        # set when delivering
+  notes: String
+  subtotal: Float!
+  deliveryFee: Float!
+  total: Float!
+  status: String!                # "pending", "ready", "completed", "cancelled"
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+# Name and price are copied in when ordering so later price changes
+# don't change old orders.
+type MedicationOrderItem @table {
+  order: MedicationOrder!
+  medication: Medication!
+  name: String!
+  quantity: Int!
+  unitPrice: Float!
+  lineTotal: Float!
 }

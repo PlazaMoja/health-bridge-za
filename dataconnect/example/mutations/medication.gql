@@ -1,0 +1,54 @@
+# Order Medication > Place order (the items are added with InsertMedicationOrderItem)
+mutation InsertMedicationOrder(
+  $patientId: UUID!
+  $fulfilment: String!
+  $clinicId: UUID
+  $deliveryAddress: String
+  $notes: String
+  $subtotal: Float!
+  $deliveryFee: Float!
+  $total: Float!
+) @auth(level: USER) {
+  medicationOrder_insert(
+    data: {
+      patientId: $patientId
+      fulfilment: $fulfilment
+      clinicId: $clinicId
+      deliveryAddress: $deliveryAddress
+      notes: $notes
+      subtotal: $subtotal
+      deliveryFee: $deliveryFee
+      total: $total
+      status: "pending"
+      createdAt_expr: "request.time"
+    }
+  )
+}
+
+mutation InsertMedicationOrderItem(
+  $orderId: UUID!
+  $medicationId: UUID!
+  $name: String!
+  $quantity: Int!
+  $unitPrice: Float!
+  $lineTotal: Float!
+) @auth(level: USER) {
+  medicationOrderItem_insert(
+    data: {
+      orderId: $orderId
+      medicationId: $medicationId
+      name: $name
+      quantity: $quantity
+      unitPrice: $unitPrice
+      lineTotal: $lineTotal
+    }
+  )
+}
+
+# My Orders > Cancel (only offered while the order is pending)
+mutation CancelMedicationOrder($id: UUID!) @auth(level: USER) {
+  medicationOrder_update(
+    id: $id
+    data: { status: "cancelled", updatedAt_expr: "request.time" }
+  )
+}

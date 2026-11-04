@@ -6,6 +6,8 @@ import 'providers/app_providers.dart';
 import 'services/auth_service.dart';
 import 'services/firebase_service.dart';
 import 'services/app_error.dart';
+import 'services/settings_service.dart';
+import 'app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,15 +21,23 @@ class HealthBridgeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppProviders(
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Health Bridge',
-        theme: ThemeData(
-          fontFamily: 'Arial',
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2F80ED)),
-          useMaterial3: true,
+      // Rebuilds the app when the user changes dark mode or text size in Settings.
+      child: ValueListenableBuilder<AppSettings>(
+        valueListenable: SettingsService.settings,
+        builder: (context, settings, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Health Bridge',
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: settings.flutterThemeMode,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(settings.textScale),
+            ),
+            child: child!,
+          ),
+          home: const AuthWrapper(),
         ),
-        home: const AuthWrapper(),
       ),
     );
   }
@@ -41,6 +51,8 @@ class AuthWrapper extends StatelessWidget {
     final user = context.watch<User?>();
 
     if (user != null) {
+      // Load this person's theme / text size / notification choices.
+      SettingsService.loadFor(user.uid);
       return const HomePage();
     } else {
       return const LoginPage();
@@ -118,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -133,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: 130,
                   height: 130,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF4FF),
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -220,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                       color: Color(0xFF2F80ED),
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF7F9FC),
+                    fillColor: Theme.of(context).scaffoldBackgroundColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -266,7 +278,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     filled: true,
-                    fillColor: const Color(0xFFF7F9FC),
+                    fillColor: Theme.of(context).scaffoldBackgroundColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -379,7 +391,7 @@ class _LoginPageState extends State<LoginPage> {
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF4FF),
+        color: Theme.of(context).colorScheme.primaryContainer,
         shape: BoxShape.circle,
       ),
       child: IconButton(
@@ -527,7 +539,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -750,7 +762,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         prefixIcon: Icon(prefixIcon, color: const Color(0xFF2F80ED)),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xFFF7F9FC),
+        fillColor: Theme.of(context).scaffoldBackgroundColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

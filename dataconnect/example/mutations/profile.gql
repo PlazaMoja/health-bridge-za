@@ -1,0 +1,102 @@
+# Profile > Personal Information (name and phone live on User)
+mutation UpdateUserDetails(
+  $id: UUID!
+  $firstName: String!
+  $lastName: String!
+  $phoneNumber: String
+) @auth(level: USER) {
+  user_update(
+    id: $id
+    data: {
+      firstName: $firstName
+      lastName: $lastName
+      phoneNumber: $phoneNumber
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+
+# Profile > Personal Information (health details live on Patient)
+mutation UpdatePatientDetails(
+  $id: UUID!
+  $dateOfBirth: Date
+  $gender: String
+  $address: String
+  $emergencyContactName: String
+  $emergencyContactPhone: String
+) @auth(level: USER) {
+  patient_update(
+    id: $id
+    data: {
+      dateOfBirth: $dateOfBirth
+      gender: $gender
+      address: $address
+      emergencyContactName: $emergencyContactName
+      emergencyContactPhone: $emergencyContactPhone
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+
+# Creates the user's settings row the first time it's needed
+mutation InsertPreference($userId: UUID!) @auth(level: USER) {
+  preference_insert(
+    data: {
+      userId: $userId
+      themeMode: "system"
+      textSize: "normal"
+      appointmentReminders: true
+      reminderTime: "1hour"
+      medicationReminders: true
+      healthTips: true
+      promotions: false
+      shareDataForResearch: false
+      createdAt_expr: "request.time"
+    }
+  )
+}
+
+# Only the settings that are passed in are changed
+mutation UpdatePreference(
+  $id: UUID!
+  $themeMode: String
+  $textSize: String
+  $appointmentReminders: Boolean
+  $reminderTime: String
+  $medicationReminders: Boolean
+  $healthTips: Boolean
+  $promotions: Boolean
+  $shareDataForResearch: Boolean
+) @auth(level: USER) {
+  preference_update(
+    id: $id
+    data: {
+      themeMode: $themeMode
+      textSize: $textSize
+      appointmentReminders: $appointmentReminders
+      reminderTime: $reminderTime
+      medicationReminders: $medicationReminders
+      healthTips: $healthTips
+      promotions: $promotions
+      shareDataForResearch: $shareDataForResearch
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+
+# Profile > Privacy & Security > Delete account.
+# Removes everything linked to the patient, then the patient and user rows.
+# (The Firebase Auth account itself is deleted by the app afterwards.)
+mutation DeletePatientAccount($userId: UUID!, $patientId: UUID!)
+@auth(level: USER)
+@transaction {
+  medicationOrderItem_deleteMany(
+    where: { order: { patient: { id: { eq: $patientId } } } }
+  )
+  medicationOrder_deleteMany(where: { patient: { id: { eq: $patientId } } })
+  medicalRecord_deleteMany(where: { patient: { id: { eq: $patientId } } })
+  appointment_deleteMany(where: { patient: { id: { eq: $patientId } } })
+  preference_deleteMany(where: { user: { id: { eq: $userId } } })
+  patient_delete(id: $patientId)
+  user_delete(id: $userId)
+}
