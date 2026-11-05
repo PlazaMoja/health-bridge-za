@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'cart.dart';
 import 'dataconnect_generated/generated.dart';
-import 'main.dart';
 import 'notifications_page.dart';
 import 'personal_info_page.dart';
 import 'privacy_security_page.dart';
@@ -209,13 +208,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           Cart.clear();
                           SettingsService.reset();
                           await FirebaseAuth.instance.signOut();
+                          // Go back to the first screen. It shows the login
+                          // page by itself once nobody is signed in, and the
+                          // home page again after the next login. (Pushing a
+                          // new LoginPage here left it stuck on top after
+                          // logging back in.)
                           if (context.mounted) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
-                              ),
-                            );
+                            Navigator.of(context)
+                                .popUntil((route) => route.isFirst);
                           }
                         },
                         style: OutlinedButton.styleFrom(
