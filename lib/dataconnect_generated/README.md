@@ -299,6 +299,55 @@ ref.subscribe(...);
 ```
 
 
+### ListConsultationRequests
+#### Required Arguments
+```dart
+String patientId = ...;
+HealthbridgeConnector.instance.listConsultationRequests(
+  patientId: patientId,
+).execute();
+```
+
+
+
+#### Return Type
+`execute()` returns a `QueryResult<ListConsultationRequestsData, ListConsultationRequestsVariables>`
+```dart
+/// Result of an Operation Request (query/mutation).
+class OperationResult<Data, Variables> {
+  OperationResult(this.dataConnect, this.data, this.ref);
+  Data data;
+  OperationRef<Data, Variables> ref;
+  FirebaseDataConnect dataConnect;
+}
+
+/// Result of a query request. Created to hold extra variables in the future.
+class QueryResult<Data, Variables> extends OperationResult<Data, Variables> {
+  QueryResult(super.dataConnect, super.data, super.ref);
+}
+
+final result = await HealthbridgeConnector.instance.listConsultationRequests(
+  patientId: patientId,
+);
+ListConsultationRequestsData data = result.data;
+final ref = result.ref;
+```
+
+#### Getting the Ref
+Each builder returns an `execute` function, which is a helper function that creates a `Ref` object, and executes the underlying operation.
+An example of how to use the `Ref` object is shown below:
+```dart
+String patientId = ...;
+
+final ref = HealthbridgeConnector.instance.listConsultationRequests(
+  patientId: patientId,
+).ref();
+ref.execute();
+
+ref.subscribe(...);
+```
+
+
 ### ListMedications
 #### Required Arguments
 ```dart
@@ -793,6 +842,115 @@ An example of how to use the `Ref` object is shown below:
 String id = ...;
 
 final ref = HealthbridgeConnector.instance.updateAppointment(
+  id: id,
+).ref();
+ref.execute();
+```
+
+
+### InsertConsultationRequest
+#### Required Arguments
+```dart
+String patientId = ...;
+String healthcareWorkerId = ...;
+String reason = ...;
+DateTime preferredDate = ...;
+String preferredTime = ...;
+String mode = ...;
+HealthbridgeConnector.instance.insertConsultationRequest(
+  patientId: patientId,
+  healthcareWorkerId: healthcareWorkerId,
+  reason: reason,
+  preferredDate: preferredDate,
+  preferredTime: preferredTime,
+  mode: mode,
+).execute();
+```
+
+
+
+#### Return Type
+`execute()` returns a `OperationResult<InsertConsultationRequestData, InsertConsultationRequestVariables>`
+```dart
+/// Result of an Operation Request (query/mutation).
+class OperationResult<Data, Variables> {
+  OperationResult(this.dataConnect, this.data, this.ref);
+  Data data;
+  OperationRef<Data, Variables> ref;
+  FirebaseDataConnect dataConnect;
+}
+
+final result = await HealthbridgeConnector.instance.insertConsultationRequest(
+  patientId: patientId,
+  healthcareWorkerId: healthcareWorkerId,
+  reason: reason,
+  preferredDate: preferredDate,
+  preferredTime: preferredTime,
+  mode: mode,
+);
+InsertConsultationRequestData data = result.data;
+final ref = result.ref;
+```
+
+#### Getting the Ref
+Each builder returns an `execute` function, which is a helper function that creates a `Ref` object, and executes the underlying operation.
+An example of how to use the `Ref` object is shown below:
+```dart
+String patientId = ...;
+String healthcareWorkerId = ...;
+String reason = ...;
+DateTime preferredDate = ...;
+String preferredTime = ...;
+String mode = ...;
+
+final ref = HealthbridgeConnector.instance.insertConsultationRequest(
+  patientId: patientId,
+  healthcareWorkerId: healthcareWorkerId,
+  reason: reason,
+  preferredDate: preferredDate,
+  preferredTime: preferredTime,
+  mode: mode,
+).ref();
+ref.execute();
+```
+
+
+### CancelConsultationRequest
+#### Required Arguments
+```dart
+String id = ...;
+HealthbridgeConnector.instance.cancelConsultationRequest(
+  id: id,
+).execute();
+```
+
+
+
+#### Return Type
+`execute()` returns a `OperationResult<CancelConsultationRequestData, CancelConsultationRequestVariables>`
+```dart
+/// Result of an Operation Request (query/mutation).
+class OperationResult<Data, Variables> {
+  OperationResult(this.dataConnect, this.data, this.ref);
+  Data data;
+  OperationRef<Data, Variables> ref;
+  FirebaseDataConnect dataConnect;
+}
+
+final result = await HealthbridgeConnector.instance.cancelConsultationRequest(
+  id: id,
+);
+CancelConsultationRequestData data = result.data;
+final ref = result.ref;
+```
+
+#### Getting the Ref
+Each builder returns an `execute` function, which is a helper function that creates a `Ref` object, and executes the underlying operation.
+An example of how to use the `Ref` object is shown below:
+```dart
+String id = ...;
+
+final ref = HealthbridgeConnector.instance.cancelConsultationRequest(
   id: id,
 ).ref();
 ref.execute();

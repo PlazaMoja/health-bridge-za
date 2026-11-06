@@ -23,13 +23,15 @@ class ListAllHealthcareWorkersHealthcareWorkers {
   final String? profession;
   final String? specialization;
   final bool? isActive;
+  final ListAllHealthcareWorkersHealthcareWorkersClinic clinic;
   ListAllHealthcareWorkersHealthcareWorkers.fromJson(dynamic json):
   
   id = nativeFromJson<String>(json['id']),
   user = ListAllHealthcareWorkersHealthcareWorkersUser.fromJson(json['user']),
   profession = json['profession'] == null ? null : nativeFromJson<String>(json['profession']),
   specialization = json['specialization'] == null ? null : nativeFromJson<String>(json['specialization']),
-  isActive = json['isActive'] == null ? null : nativeFromJson<bool>(json['isActive']);
+  isActive = json['isActive'] == null ? null : nativeFromJson<bool>(json['isActive']),
+  clinic = ListAllHealthcareWorkersHealthcareWorkersClinic.fromJson(json['clinic']);
   @override
   bool operator ==(Object other) {
     if(identical(this, other)) {
@@ -44,11 +46,12 @@ class ListAllHealthcareWorkersHealthcareWorkers {
     user == otherTyped.user && 
     profession == otherTyped.profession && 
     specialization == otherTyped.specialization && 
-    isActive == otherTyped.isActive;
+    isActive == otherTyped.isActive && 
+    clinic == otherTyped.clinic;
     
   }
   @override
-  int get hashCode => Object.hashAll([id.hashCode, user.hashCode, profession.hashCode, specialization.hashCode, isActive.hashCode]);
+  int get hashCode => Object.hashAll([id.hashCode, user.hashCode, profession.hashCode, specialization.hashCode, isActive.hashCode, clinic.hashCode]);
   
 
   Map<String, dynamic> toJson() {
@@ -64,6 +67,7 @@ class ListAllHealthcareWorkersHealthcareWorkers {
     if (isActive != null) {
       json['isActive'] = nativeToJson<bool?>(isActive);
     }
+    json['clinic'] = clinic.toJson();
     return json;
   }
 
@@ -73,6 +77,7 @@ class ListAllHealthcareWorkersHealthcareWorkers {
     this.profession,
     this.specialization,
     this.isActive,
+    required this.clinic,
   });
 }
 
@@ -112,6 +117,40 @@ class ListAllHealthcareWorkersHealthcareWorkersUser {
   ListAllHealthcareWorkersHealthcareWorkersUser({
     required this.firstName,
     required this.lastName,
+  });
+}
+
+@immutable
+class ListAllHealthcareWorkersHealthcareWorkersClinic {
+  final String name;
+  ListAllHealthcareWorkersHealthcareWorkersClinic.fromJson(dynamic json):
+  
+  name = nativeFromJson<String>(json['name']);
+  @override
+  bool operator ==(Object other) {
+    if(identical(this, other)) {
+      return true;
+    }
+    if(other.runtimeType != runtimeType) {
+      return false;
+    }
+
+    final ListAllHealthcareWorkersHealthcareWorkersClinic otherTyped = other as ListAllHealthcareWorkersHealthcareWorkersClinic;
+    return name == otherTyped.name;
+    
+  }
+  @override
+  int get hashCode => name.hashCode;
+  
+
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> json = {};
+    json['name'] = nativeToJson<String>(name);
+    return json;
+  }
+
+  ListAllHealthcareWorkersHealthcareWorkersClinic({
+    required this.name,
   });
 }
 

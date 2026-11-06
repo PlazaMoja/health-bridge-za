@@ -94,6 +94,7 @@ mutation DeletePatientAccount($userId: UUID!, $patientId: UUID!)
     where: { order: { patient: { id: { eq: $patientId } } } }
   )
   medicationOrder_deleteMany(where: { patient: { id: { eq: $patientId } } })
+  consultationRequest_deleteMany(where: { patient: { id: { eq: $patientId } } })
   medicalRecord_deleteMany(where: { patient: { id: { eq: $patientId } } })
   appointment_deleteMany(where: { patient: { id: { eq: $patientId } } })
   preference_deleteMany(where: { user: { id: { eq: $userId } } })

@@ -132,3 +132,17 @@ type MedicationOrderItem @table {
   unitPrice: Float!
   lineTotal: Float!
 }
+
+# ---------- Talk to a Doctor ----------
+# A patient asks a doctor for a phone or video consultation.
+type ConsultationRequest @table {
+  patient: Patient!
+  healthcareWorker: HealthcareWorker!
+  reason: String!
+  preferredDate: Date!
+  preferredTime: String!         # "morning", "afternoon", "evening"
+  mode: String!                  # "phone" or "video"
+  status: String!                # "requested", "confirmed", "completed", "cancelled"
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}

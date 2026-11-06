@@ -1,0 +1,21 @@
+# Talk to a Doctor > My consultations, newest first
+query ListConsultationRequests($patientId: UUID!) @auth(level: USER) {
+  consultationRequests(
+    where: { patient: { id: { eq: $patientId } } }
+    orderBy: { createdAt: DESC }
+  ) {
+    id
+    reason
+    preferredDate
+    preferredTime
+    mode
+    status
+    createdAt
+    healthcareWorker {
+      profession
+      specialization
+      user { firstName lastName }
+      clinic { name phoneNumber }
+    }
+  }
+}

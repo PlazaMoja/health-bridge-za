@@ -1,0 +1,21 @@
+# Map coordinates for the 15 seeded clinics, so Nearby Clinics can sort by
+# distance. Approximate locations (to within about 1 km). Safe to run again.
+#
+#   firebase dataconnect:execute dataconnect/seed/seed_clinic_locations.gql SeedClinicLocations
+mutation SeedClinicLocations @auth(level: USER) @transaction {
+  c1: clinic_update(id: "10000000-0000-4000-8000-000000000001", data: {latitude: -33.9416, longitude: 18.4645})  # Groote Schuur Hospital
+  c2: clinic_update(id: "10000000-0000-4000-8000-000000000002", data: {latitude: -33.9136, longitude: 18.6141})  # Tygerberg Hospital
+  c3: clinic_update(id: "10000000-0000-4000-8000-000000000003", data: {latitude: -33.9539, longitude: 18.4881})  # Red Cross War Memorial Children's Hospital
+  c4: clinic_update(id: "10000000-0000-4000-8000-000000000004", data: {latitude: -34.0055, longitude: 18.4686})  # Victoria Hospital
+  c5: clinic_update(id: "10000000-0000-4000-8000-000000000005", data: {latitude: -33.9036, longitude: 18.4152})  # Somerset Hospital
+  c6: clinic_update(id: "10000000-0000-4000-8000-000000000006", data: {latitude: -34.0445, longitude: 18.6779})  # Khayelitsha District Hospital
+  c7: clinic_update(id: "10000000-0000-4000-8000-000000000007", data: {latitude: -34.027, longitude: 18.617})  # Mitchells Plain District Hospital
+  c8: clinic_update(id: "10000000-0000-4000-8000-000000000008", data: {latitude: -33.733, longitude: 18.965})  # Paarl Hospital
+  c9: clinic_update(id: "10000000-0000-4000-8000-000000000009", data: {latitude: -33.644, longitude: 19.443})  # Worcester Hospital
+  c10: clinic_update(id: "10000000-0000-4000-8000-000000000010", data: {latitude: -33.969, longitude: 22.454})  # George Hospital
+  c11: clinic_update(id: "10000000-0000-4000-8000-000000000011", data: {latitude: -34.035, longitude: 23.048})  # Knysna Provincial Hospital
+  c12: clinic_update(id: "10000000-0000-4000-8000-000000000012", data: {latitude: -32.907, longitude: 17.996})  # Vredenburg Provincial Hospital
+  c13: clinic_update(id: "10000000-0000-4000-8000-000000000013", data: {latitude: -33.37, longitude: 19.311})  # Ceres Hospital
+  c14: clinic_update(id: "10000000-0000-4000-8000-000000000014", data: {latitude: -34.23, longitude: 19.427})  # Caledon Hospital
+  c15: clinic_update(id: "10000000-0000-4000-8000-000000000015", data: {latitude: -34.414, longitude: 19.242})  # Hermanus Provincial Hospital
+}

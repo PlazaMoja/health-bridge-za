@@ -7,6 +7,10 @@ part 'insert_appointment.dart';
 
 part 'update_appointment.dart';
 
+part 'insert_consultation_request.dart';
+
+part 'cancel_consultation_request.dart';
+
 part 'insert_medication_order.dart';
 
 part 'insert_medication_order_item.dart';
@@ -39,6 +43,8 @@ part 'list_medical_records.dart';
 
 part 'list_all_healthcare_workers.dart';
 
+part 'list_consultation_requests.dart';
+
 part 'list_medications.dart';
 
 part 'list_medication_orders.dart';
@@ -69,6 +75,16 @@ class HealthbridgeConnector {
   
   UpdateAppointmentVariablesBuilder updateAppointment ({required String id, }) {
     return UpdateAppointmentVariablesBuilder(dataConnect, id: id,);
+  }
+  
+  
+  InsertConsultationRequestVariablesBuilder insertConsultationRequest ({required String patientId, required String healthcareWorkerId, required String reason, required DateTime preferredDate, required String preferredTime, required String mode, }) {
+    return InsertConsultationRequestVariablesBuilder(dataConnect, patientId: patientId,healthcareWorkerId: healthcareWorkerId,reason: reason,preferredDate: preferredDate,preferredTime: preferredTime,mode: mode,);
+  }
+  
+  
+  CancelConsultationRequestVariablesBuilder cancelConsultationRequest ({required String id, }) {
+    return CancelConsultationRequestVariablesBuilder(dataConnect, id: id,);
   }
   
   
@@ -149,6 +165,11 @@ class HealthbridgeConnector {
   
   ListAllHealthcareWorkersVariablesBuilder listAllHealthcareWorkers () {
     return ListAllHealthcareWorkersVariablesBuilder(dataConnect, );
+  }
+  
+  
+  ListConsultationRequestsVariablesBuilder listConsultationRequests ({required String patientId, }) {
+    return ListConsultationRequestsVariablesBuilder(dataConnect, patientId: patientId,);
   }
   
   

@@ -69,5 +69,6 @@ query ListAllHealthcareWorkers @auth(level: USER) {
     profession
     specialization
     isActive
+    clinic { name }
   }
 }

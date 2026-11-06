@@ -9,6 +9,8 @@ What this branch adds on top of `main`:
 | Profile > Notifications | Reminder switches and reminder time | new `Preference` table |
 | Profile > Settings | **Dark mode** (System / Light / Dark) and text size, applied app-wide | new `Preference` table |
 | Order Medication | Medication list with prices, cart, collect at a clinic or delivery, My Orders with cancel | new `Medication`, `MedicationOrder`, `MedicationOrderItem` tables |
+| Talk to a Doctor | Request a phone or video consultation (reason, preferred date and time); My Consultations with cancel | new `ConsultationRequest` table |
+| Nearby Clinics | Asks for the user's location and sorts clinics nearest first with the distance; A–Z if location is refused | existing `Clinic.latitude` / `longitude`, filled by `seed_clinic_locations.gql` |
 
 The old Order Medication page called a Cloud Function in another project
 (`us-central1-plaza-dd8b3`), which failed. It now uses Data Connect like the rest of the app.
@@ -31,6 +33,9 @@ firebase deploy --only dataconnect
 
 # 3. Add the starter medications (safe to run again)
 firebase dataconnect:execute dataconnect/seed/seed_medications.gql SeedMedications
+
+# 4. Add map coordinates to the 15 clinics (safe to run again)
+firebase dataconnect:execute dataconnect/seed/seed_clinic_locations.gql SeedClinicLocations
 ```
 
 Then:
@@ -83,3 +88,5 @@ Without `--dart-define=USE_EMULATOR=true` the app uses the real project as norma
   from the app, so a signed-in user could in theory read or change another user's
   rows. Switching to `auth.uid` checks would fix this for all operations.
 - Notification settings are saved, but nothing sends notifications yet.
+- Consultation requests stay `requested` until a clinic confirms them; there's no clinic-staff screen yet, so change `status` in the Firebase console to test `confirmed` / `completed`.
+- Clinic coordinates are approximate (within about 1 km). The browser only shares location on `localhost` or HTTPS.

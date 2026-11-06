@@ -3,14 +3,14 @@
 ```dart
 HealthbridgeConnector.instance.InsertAppointment(insertAppointmentVariables).execute();
 HealthbridgeConnector.instance.UpdateAppointment(updateAppointmentVariables).execute();
+HealthbridgeConnector.instance.InsertConsultationRequest(insertConsultationRequestVariables).execute();
+HealthbridgeConnector.instance.CancelConsultationRequest(cancelConsultationRequestVariables).execute();
 HealthbridgeConnector.instance.InsertMedicationOrder(insertMedicationOrderVariables).execute();
 HealthbridgeConnector.instance.InsertMedicationOrderItem(insertMedicationOrderItemVariables).execute();
 HealthbridgeConnector.instance.CancelMedicationOrder(cancelMedicationOrderVariables).execute();
 HealthbridgeConnector.instance.InsertPatient(insertPatientVariables).execute();
 HealthbridgeConnector.instance.UpdateUserDetails(updateUserDetailsVariables).execute();
 HealthbridgeConnector.instance.UpdatePatientDetails(updatePatientDetailsVariables).execute();
-HealthbridgeConnector.instance.InsertPreference(insertPreferenceVariables).execute();
-HealthbridgeConnector.instance.UpdatePreference(updatePreferenceVariables).execute();
 
 ```
 

@@ -90,6 +90,7 @@ class DeletePatientAccountUserDelete {
 class DeletePatientAccountData {
   final int medicationOrderItem_deleteMany;
   final int medicationOrder_deleteMany;
+  final int consultationRequest_deleteMany;
   final int medicalRecord_deleteMany;
   final int appointment_deleteMany;
   final int preference_deleteMany;
@@ -99,6 +100,7 @@ class DeletePatientAccountData {
   
   medicationOrderItem_deleteMany = nativeFromJson<int>(json['medicationOrderItem_deleteMany']),
   medicationOrder_deleteMany = nativeFromJson<int>(json['medicationOrder_deleteMany']),
+  consultationRequest_deleteMany = nativeFromJson<int>(json['consultationRequest_deleteMany']),
   medicalRecord_deleteMany = nativeFromJson<int>(json['medicalRecord_deleteMany']),
   appointment_deleteMany = nativeFromJson<int>(json['appointment_deleteMany']),
   preference_deleteMany = nativeFromJson<int>(json['preference_deleteMany']),
@@ -116,6 +118,7 @@ class DeletePatientAccountData {
     final DeletePatientAccountData otherTyped = other as DeletePatientAccountData;
     return medicationOrderItem_deleteMany == otherTyped.medicationOrderItem_deleteMany && 
     medicationOrder_deleteMany == otherTyped.medicationOrder_deleteMany && 
+    consultationRequest_deleteMany == otherTyped.consultationRequest_deleteMany && 
     medicalRecord_deleteMany == otherTyped.medicalRecord_deleteMany && 
     appointment_deleteMany == otherTyped.appointment_deleteMany && 
     preference_deleteMany == otherTyped.preference_deleteMany && 
@@ -124,13 +127,14 @@ class DeletePatientAccountData {
     
   }
   @override
-  int get hashCode => Object.hashAll([medicationOrderItem_deleteMany.hashCode, medicationOrder_deleteMany.hashCode, medicalRecord_deleteMany.hashCode, appointment_deleteMany.hashCode, preference_deleteMany.hashCode, patient_delete.hashCode, user_delete.hashCode]);
+  int get hashCode => Object.hashAll([medicationOrderItem_deleteMany.hashCode, medicationOrder_deleteMany.hashCode, consultationRequest_deleteMany.hashCode, medicalRecord_deleteMany.hashCode, appointment_deleteMany.hashCode, preference_deleteMany.hashCode, patient_delete.hashCode, user_delete.hashCode]);
   
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {};
     json['medicationOrderItem_deleteMany'] = nativeToJson<int>(medicationOrderItem_deleteMany);
     json['medicationOrder_deleteMany'] = nativeToJson<int>(medicationOrder_deleteMany);
+    json['consultationRequest_deleteMany'] = nativeToJson<int>(consultationRequest_deleteMany);
     json['medicalRecord_deleteMany'] = nativeToJson<int>(medicalRecord_deleteMany);
     json['appointment_deleteMany'] = nativeToJson<int>(appointment_deleteMany);
     json['preference_deleteMany'] = nativeToJson<int>(preference_deleteMany);
@@ -146,6 +150,7 @@ class DeletePatientAccountData {
   DeletePatientAccountData({
     required this.medicationOrderItem_deleteMany,
     required this.medicationOrder_deleteMany,
+    required this.consultationRequest_deleteMany,
     required this.medicalRecord_deleteMany,
     required this.appointment_deleteMany,
     required this.preference_deleteMany,
