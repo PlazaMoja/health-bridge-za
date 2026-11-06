@@ -70,11 +70,18 @@ class SettingsService {
     }
   }
 
-  /// Called on logout so the next person starts with the defaults.
+  /// Called on logout. The other settings go back to the defaults, but the
+  /// theme and text size stay as they were, so the login screen does not
+  /// suddenly switch between light and dark. The next person's own choices
+  /// load as soon as they log in.
   static void reset() {
     _loadedForUid = null;
     _preferenceId = null;
-    settings.value = const AppSettings();
+    final current = settings.value;
+    settings.value = AppSettings(
+      themeMode: current.themeMode,
+      textSize: current.textSize,
+    );
   }
 
   static Future<void> _load() async {
